@@ -59,6 +59,19 @@ def getRecipe(drinkID):
     
     return recipe
 
+def downloadDrinkImage(imageURL):
+  filename = 'temp.jpg'
+  request = requests.get(imageURL, stream=True)
+  if request.status_code == 200:
+    with open(filename, 'wb') as image:
+      for chunk in request:
+        image.write(chunk)
+    return filename
+
+  else:
+    return False
+
+
 def getDrinkData(ingredient):
 
   drinks = getDrinksByIngredient(ingredient)
@@ -67,7 +80,8 @@ def getDrinkData(ingredient):
     randomDrink = random.randint(0, (numberOfDrinks-1))
 
     name        = drinks[randomDrink]['name']
-    image       = drinks[randomDrink]['image']
+    imageURL    = drinks[randomDrink]['image']
+    image       = downloadDrinkImage(imageURL)
     drinkID     = drinks[randomDrink]['drinkID']
     recipe      = getRecipe(drinkID)
     ingredients = ("\n").join(recipe['ingredients'])
