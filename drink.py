@@ -2,10 +2,6 @@ import requests
 import json
 import yaml
 import random
-import webbrowser
-import pprint
-
-pp = pprint.PrettyPrinter(indent=2)
 
 def getAvailableIngridients():
   availableIngridients = "https://www.thecocktaildb.com/api/json/v1/1/list.php?i=list"
@@ -20,8 +16,8 @@ def getAvailableIngridients():
     return availableIngirdients
 
 
-def getByIngredient(ingredients):
-  drinksByIngredient = "https://www.thecocktaildb.com/api/json/v1/1/filter.php?i={}".format(ingredients[0])
+def getDrinksByIngredient(ingredient):
+  drinksByIngredient = "https://www.thecocktaildb.com/api/json/v1/1/filter.php?i={}".format(ingredient)
   try: 
     data = requests.get(drinksByIngredient)
     data_json = data.json()
@@ -32,13 +28,13 @@ def getByIngredient(ingredients):
   if data_dict:
     drinks = data_dict['drinks']
     for drink in drinks:
-      drink['drinkName'] = drink.pop('strDrink')
-      drink['drinkPic']  = drink.pop('strDrinkThumb')
-      drink['drinkID']   = drink.pop('idDrink')
+      drink['name']     = drink.pop('strDrink')
+      drink['image']    = drink.pop('strDrinkThumb')
+      drink['drinkID']  = drink.pop('idDrink')
     
     return drinks 
 
-def getDrinkDetails(drinkID):
+def getRecipe(drinkID):
   drinkDetails = "https://www.thecocktaildb.com/api/json/v1/1/lookup.php?i={}".format(drinkID) 
   try:  
     data = requests.get(drinkDetails)
@@ -49,7 +45,7 @@ def getDrinkDetails(drinkID):
 
   if data_dict:
     details = data_dict['drinks'][0]
-    recipe = {'instructions': {},
+    recipe = {'instructions': '',
               'ingredients' : [] 
              }
 
@@ -58,34 +54,32 @@ def getDrinkDetails(drinkID):
         ingredient  = details[name]
         measurement = details[name.replace('Ingredient','Measure')]
         measurement = measurement if measurement else "To Liking"
-        recipe['ingredients'].append([ingredient, measurement])
-      recipe['instructions']['text'] = details['strInstructions']
-      recipe['instructions']['charCount'] = len(details['strInstructions'])
+        recipe['ingredients'].append("* {} - {}".format(ingredient,measurement))
+      recipe['instructions'] = details['strInstructions']
     
     return recipe
 
-def getTweetDrink(ingredients):
+def getDrinkData(ingredient):
 
-  drinks = getByIngredient(ingredients)
+  drinks = getDrinksByIngredient(ingredient)
   numberOfDrinks = len(drinks)
   if numberOfDrinks > 0:
     randomDrink = random.randint(0, (numberOfDrinks-1))
 
-    drinkName   = drinks[randomDrink]['drinkName']
+    name        = drinks[randomDrink]['name']
+    image       = drinks[randomDrink]['image']
     drinkID     = drinks[randomDrink]['drinkID']
-    drinkRecipe =  getDrinkDetails(drinkID)
-
-    print(drinkName)
-    print(drinkRecipe)
+    recipe      = getRecipe(drinkID)
+    ingredients = ("\n").join(recipe['ingredients'])
 
 
+    message = "Try out: {}!\n{}".format(name, ingredients)
+    instructions = recipe['instructions']
 
-# availableIngridients = getAvailableIngridients()
-# print(availableIngridients)
-ingredients = ['orange']
-getTweetDrink(ingredients)
+    data = {'message': message,
+            'instructions': instructions,
+            'image': image}
 
-
-
+    return data
 
 
